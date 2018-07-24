@@ -19,6 +19,8 @@ public class Mapper implements Runnable{
 
     private int runNumber = 0;
 
+    private double previousDisplacement = 0;
+
     public Mapper() {
         map = new ArrayList<>();
         isRunning = true;
@@ -30,10 +32,15 @@ public class Mapper implements Runnable{
     public void run() {
         while (true) {
         	if (isRunning) {
+
+        		double displacement = previousDisplacement - (RobotMap.leftEncoder.get() + RobotMap.rightEncoder.get()) / 2;
+
         		/*
                 Get the robot's position using gyro and encoders. Then, use the lidar to sense how far the wall is away
                 */
-				Point robotPos = Robot.drivetrain.getDisplacement();
+				Point robotPos = new Point(displacement * Math.cos(RobotMap.gyro.getAngle()), displacement * Math.sin(RobotMap.gyro.getAngle()));
+
+				previousDisplacement = displacement;
 
 				double direction = getLidarDirection();
 

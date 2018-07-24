@@ -25,10 +25,6 @@ public class Drivetrain extends Subsystem {
     	driveArcade(0, 0);
     }
 
-    public Point getDisplacement() {
-    	Point point = new Point(0, 0);
-    	// TODO: Implement
-	    return point;
-    }
+
 }
 
