@@ -70,9 +70,54 @@ public class Mapper implements Runnable{
 
     public void optimize() {
 		// TODO: Implement. This should reduce the number of elements in the list by merging similar lines into larger ones.
+	    ArrayList<Line> newMap = new ArrayList<>();
+
+	    for (int i=0; i<map.size(); i++) {
+	    	for (int n=i+1; n<map.size(); n++) {
+	    		if (almostEqual(map.get(i).getP2().getX(), map.get(n).getP1().getX(), 10)
+					    && almostEqual(map.get(i).getP2().getY(), map.get(n).getP1().getY(), 10)) {
+	    			// If the two middle points are almost equal
+
+				    // Create average of middle point
+				    Point middlePoint = new Point(average(map.get(i).getP2().getX(), map.get(n).getP1().getX()),
+						    average(map.get(i).getP2().getY(), map.get(n).getP1().getY()));
+
+				    Point leftPoint = map.get(i).getP1();
+				    Point rightPoint = map.get(n).getP2();
+
+				    double leftSide = (middlePoint.getY()-leftPoint.getY())*(rightPoint.getX()-middlePoint.getX());
+				    double rightSide = (rightPoint.getY()-middlePoint.getY())*(middlePoint.getX()-leftPoint.getX());
+
+				    if (almostEqual(leftSide, rightSide, 10)) {
+				    	newMap.add(new Line(leftPoint, rightPoint));
+				    } else {
+				    	newMap.add(map.get(i));
+				    	newMap.add(map.get(n));
+				    }
+			    }
+		    }
+
+		    map = newMap;
+	    }
     }
 
     public void stop() { // Unsure if needed
     	isRunning = false;
+    }
+
+    private boolean almostEqual(double n1, double n2, double percentSensitivity) {
+    	if (percentSensitivity <= 0 || percentSensitivity >= 100) {
+    		throw new IllegalArgumentException();
+	    }
+
+	    double decimalPercent = percentSensitivity / 200.0;
+	    double highRange = n2 * (1.0 + decimalPercent);
+	    double lowRange = n2 * (1.0 - decimalPercent);
+	    return lowRange <= n1 && n1 <= highRange;
+
+    }
+
+    private double average(double n1, double n2) {
+    	return (n1+n2)/2;
     }
 }
