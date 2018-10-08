@@ -21,8 +21,13 @@ public class Mapper implements Runnable{
 
     private double previousDisplacement = 0;
 
-    public Mapper() {
+    private double robotWidth;
+
+    private final double ANGLE_THRESHOLD = 5;
+
+    public Mapper(double robotWidth) {
         map = new ArrayList<>();
+        this.robotWidth = robotWidth;
         isRunning = true;
         thread = new Thread(this);
         thread.start();
@@ -80,28 +85,47 @@ public class Mapper implements Runnable{
 	    ArrayList<Line> newMap = new ArrayList<>();
 
 	    for (int i=0; i<map.size(); i++) {
+	    	// Convert to vector
+
+		    Line line = map.get(i);
+
+		    Vector2D v1 = lineToVector(line);
+
+		    boolean hadMatch = false;
 	    	for (int n=i+1; n<map.size(); n++) {
-	    		if (almostEqual(map.get(i).getP2().getX(), map.get(n).getP1().getX(), 10)
-					    && almostEqual(map.get(i).getP2().getY(), map.get(n).getP1().getY(), 10)) {
-	    			// If the two middle points are almost equal
+	    		// For each element, test all other elements
 
-				    // Create average of middle point
-				    Point middlePoint = new Point(average(map.get(i).getP2().getX(), map.get(n).getP1().getX()),
-						    average(map.get(i).getP2().getY(), map.get(n).getP1().getY()));
+			    // Convert to vector
 
-				    Point leftPoint = map.get(i).getP1();
-				    Point rightPoint = map.get(n).getP2();
+			    Line l2 = map.get(n);
 
-				    double leftSide = (middlePoint.getY()-leftPoint.getY())*(rightPoint.getX()-middlePoint.getX());
-				    double rightSide = (rightPoint.getY()-middlePoint.getY())*(middlePoint.getX()-leftPoint.getX());
+			    Vector2D v2 = lineToVector(l2);
 
-				    if (almostEqual(leftSide, rightSide, 10)) {
-				    	newMap.add(new Line(leftPoint, rightPoint));
-				    } else {
-				    	newMap.add(map.get(i));
-				    	newMap.add(map.get(n));
+			    double angle = Math.acos(v1.dotProduct(v2)/(v1.getMagnitude()*v2.getMagnitude()));
+
+			    if (angle <= ANGLE_THRESHOLD) {
+			    	// Get the inside points
+			    	Point p1 = line.getP2();
+			    	Point p2 = l2.getP1();
+
+			    	double deltaX = Math.abs(p2.getX() - p1.getX());
+			    	double deltaY = Math.abs(p2.getY() - p1.getY());
+
+			    	if (deltaX > robotWidth || deltaY > robotWidth) {
+			    		// MERGE
+					    hadMatch = true;
+					    Line newLine = new Line(line.getP1(), l2.getP2());
+					    newMap.add(newLine);
+				    }  else {
+			    		newMap.add(l2);
 				    }
+			    } else {
+			    	newMap.add(l2);
 			    }
+		    }
+
+		    if(!hadMatch) {
+		    	newMap.add(line);
 		    }
 
 		    map = newMap;
@@ -110,6 +134,20 @@ public class Mapper implements Runnable{
 
     public void stop() { // Unsure if needed
     	isRunning = false;
+    }
+
+    private Vector2D lineToVector(Line line) {
+	    Point p1 = line.getP1();
+	    Point p2 = line.getP2();
+
+	    double deltaX = p2.getX()-p1.getX();
+	    double deltaY = p2.getY()-p1.getY();
+
+		Vector2D vec = new Vector2D(0,0);
+
+		vec.setComponents(deltaX, deltaY);
+
+		return vec;
     }
 
     private boolean almostEqual(double n1, double n2, double percentSensitivity) {
