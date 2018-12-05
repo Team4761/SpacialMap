@@ -25,6 +25,9 @@ public class Mapper implements Runnable{
 
     private final double ANGLE_THRESHOLD = 5;
 
+    private final double WALL_BUG_LENGTH = 10; // This will need to be changed
+	private final double WALL_BUG_ANGLE = 15; // Degrees
+
     public Mapper(double robotWidth) {
         map = new ArrayList<>();
         this.robotWidth = robotWidth;
@@ -38,7 +41,7 @@ public class Mapper implements Runnable{
         while (true) {
         	if (isRunning) {
 
-        		double displacement = previousDisplacement - (RobotMap.leftEncoder.get() + RobotMap.rightEncoder.get()) / 2;
+        		double displacement = previousDisplacement - (RobotMap.leftEncoder.get() + RobotMap.rightEncoder.get()) / 2.0;
 
         		/*
                 Get the robot's position using gyro and encoders. Then, use the lidar to sense how far the wall is away
@@ -90,6 +93,11 @@ public class Mapper implements Runnable{
 		    Line line = map.get(i);
 
 		    Vector2D v1 = lineToVector(line);
+
+		    // This deletes all elements that should not be there from a bug
+		    if (v1.getMagnitude() >= WALL_BUG_LENGTH && Math.abs(v1.getAngle()) >= WALL_BUG_ANGLE) {
+		    	continue; // Skip the current element, which causes it to disappear
+		    }
 
 		    boolean hadMatch = false;
 	    	for (int n=i+1; n<map.size(); n++) {
